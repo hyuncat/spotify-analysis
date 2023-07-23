@@ -1,12 +1,12 @@
 # import libraries
 import os
-import spotipy
-import spotipy.util as util
-import pandas as pd
-from pandas import json_normalize
+import json
 
 import requests
-import json
+import pandas as pd
+from pandas import json_normalize
+import spotipy
+import spotipy.util as util
 
 from spotifysecrets import *
 
