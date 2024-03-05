@@ -12,7 +12,7 @@ from spotifysecrets import *
 
 class SpotifyAnalyzer:
     # create SpotifyAnalyzer instance
-    def __init__(self, username, redirect_uri='http://localhost:8888/callback', scope=["user-top-read", "playlist-read-private"]):
+    def __init__(self, username, redirect_uri='http://localhost:8888/callback', scope=["playlist-read-private"]):
         
         self.token = None
         self.sp = None
@@ -42,9 +42,9 @@ class SpotifyAnalyzer:
             print(f"Cant get token for {self.username}")
 
         
-    # print top artists
+    # Print top artists
     def get_top_artists(self):
-        # get request for top artists
+        # Get request for top artists
         headers = {
             'Authorization': 'Bearer ' + self.token
         }
@@ -72,7 +72,7 @@ class SpotifyAnalyzer:
 
         return
     
-    # print available genre seeds
+    # Print available genre seeds
     def get_genre_seeds(self):
         headers = {
             'Authorization': 'Bearer ' + self.token
@@ -86,6 +86,52 @@ class SpotifyAnalyzer:
 
         data2_str = json.dumps(data2, indent=2)
         print(data2_str)
+
+    # Get playlist details
+    def get_playlist_details(self, playlist_link):
+        # get playlist ID from the provided link
+        playlist_id = playlist_link.split('/')[-1]
+
+        # get playlist details using the Spotify Web API
+        headers = {
+            'Authorization': 'Bearer ' + self.token
+        }
+        response = requests.get(f'https://api.spotify.com/v1/playlists/{playlist_id}', headers=headers)
+
+        if response.status_code == 200:
+            playlist_data = response.json()
+        else:
+            print(f"Error: {response.status_code}")
+            return None
+
+        # Extract relevant details from playlist data
+        def extract_track_info(track):
+            song_title = track['track']['name']
+            artists = ', '.join([artist['name'] for artist in track['track']['artists']])
+            uri = track['track']['uri']
+            popularity = track['track']['popularity']
+            return song_title, artists, uri, popularity
+
+        df = pd.DataFrame()
+        playinfo = []
+        for track in playlist_data['tracks']['items']:
+            # song_title, artists, uri, popularity = extract_track_info(track)
+            # print(f"{song_title} - {artists}")
+            playlist_info = {
+                'playlist_id': playlist_data['id'],
+                'title': playlist_data['name'],
+                'description': playlist_data['description'],
+                'image_url': playlist_data['images'][0]['url'] if playlist_data['images'] else None,
+                'song_title' : track['track']['name'],
+                'artists' : ', '.join([artist['name'] for artist in track['track']['artists']]),
+                'popularity' : track['track']['popularity'],
+                'uri' : track['track']['uri']
+            }
+            playinfo.append(playlist_info)
+
+        df = pd.DataFrame(playinfo)
+        
+        return df
 
 
 def main():
@@ -107,9 +153,10 @@ def main():
     ]
 
     sp = SpotifyAnalyzer(username, redirect_uri)
-    sp.get_top_artists()
-    sp.get_genre_seeds()
-
+    # sp.get_top_artists()
+    # sp.get_genre_seeds()
+    df = sp.get_playlist_details('https://open.spotify.com/playlist/1W7ZTOHtVIcA3Js5sEzNZV?si=302c6798a03d4b07')
+    df.to_csv('myplaylist.csv', index=False)
 
 
 if __name__ == "__main__":

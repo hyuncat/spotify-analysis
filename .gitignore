@@ -161,3 +161,4 @@ cython_debug/
 
 spotifysecrets.py
 .cache-*
+.DS_Store
